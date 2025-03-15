@@ -6,7 +6,7 @@ export type SubscriberCallbacks = {
   complete?: () => void
 }
 export type Cleanup = (() => void) | void
-export type Producer = (subscriber: Subscriber) => Cleanup
+export type Producer = (subscriber: Subscriber) => Cleanup | Promise<Cleanup>
 export type Effect = (value: unknown) => void
 export type EventObjectMap = HTMLElement | Window | Document
 export type EventMap<T> = T extends HTMLElement
