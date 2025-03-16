@@ -1,9 +1,11 @@
 import { Cleanup } from "./types"
 
+type Either = Cleanup | Promise<Cleanup>
+
 export default class Subscription {
-  private cleanup: Cleanup
+  private cleanup: Either
   private childSubscriptions: Subscription[]
-  constructor(cleanup: Cleanup) {
+  constructor(cleanup: Either) {
     this.cleanup = cleanup
     this.childSubscriptions = []
   }
@@ -20,12 +22,14 @@ export default class Subscription {
   }
 
   private recursiveUnsubscribe(children: Subscription[]) {
-    children.forEach((subscription) => {
-      if (this.cleanup) subscription.cleanup!()
-      if (subscription.childSubscriptions.length) {
-        this.recursiveUnsubscribe(subscription.childSubscriptions)
-      }
-    })
+    children
+      .map((subscription) => async () => {
+        if (this.cleanup) (await subscription.cleanup)!()
+        if (subscription.childSubscriptions.length) {
+          this.recursiveUnsubscribe(subscription.childSubscriptions)
+        }
+      })
+      .reduce((a, b) => a.then(() => b()), Promise.resolve())
   }
 
   unsubscribe() {
