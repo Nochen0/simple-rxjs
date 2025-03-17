@@ -15,6 +15,9 @@ const observable = new Observable((subscriber) => {
 
 const s1 = observable.subscribe((x: any) => console.log(x.color.name))
 const s2 = observable.subscribe((x: any) => console.log(x.habitat.name))
+const s3 = observable.subscribe((x: any) => console.log(x.growth_rate.name))
+
+s1.add(s2)
+s2.add(s3)
 
 setTimeout(() => s1.unsubscribe(), 5000)
-setTimeout(() => s2.unsubscribe(), 10000)

@@ -11,20 +11,19 @@ export default class Subscription {
   }
   add(...subscriptions: Subscription[]) {
     this.childSubscriptions.push(...subscriptions)
-    return this
   }
 
   remove(...subscriptions: Subscription[]) {
     this.childSubscriptions = this.childSubscriptions.filter(
       (subs) => !subscriptions.find((s) => subs === s)
     )
-    return this
   }
 
   private recursiveUnsubscribe(children: Subscription[]) {
     children
       .map((subscription) => async () => {
-        if (this.cleanup) (await subscription.cleanup)!()
+        const cleanup = await subscription.cleanup
+        if (cleanup) cleanup()
         if (subscription.childSubscriptions.length) {
           this.recursiveUnsubscribe(subscription.childSubscriptions)
         }
@@ -32,10 +31,9 @@ export default class Subscription {
       .reduce((a, b) => a.then(() => b()), Promise.resolve())
   }
 
-  unsubscribe() {
-    if (this.cleanup instanceof Function) {
-      this.cleanup()
-    }
+  async unsubscribe() {
+    const cleanup = await this.cleanup
+    if (cleanup) cleanup()
     this.recursiveUnsubscribe(this.childSubscriptions)
   }
 }

@@ -1,6 +1,6 @@
 import Subscriber from "./Subscriber"
 import Subscription from "./Subscription"
-import { Effect, OperatorFactory, Producer, SubscriberCallbacks } from "./types"
+import { OperatorFactory, Producer } from "./types"
 
 export default class Observable {
   private producer: Producer
@@ -10,22 +10,21 @@ export default class Observable {
     this.operatorFactories = []
   }
 
-  subscribe(fn: Effect | SubscriberCallbacks): Subscription {
-    if (fn instanceof Function) {
-      fn = {
-        next: fn,
-      }
-    }
+  subscribe(
+    next: (x: unknown) => void,
+    error?: (e: unknown) => void,
+    complete?: () => void
+  ): Subscription {
     const subscriber = new Subscriber(
-      fn,
-      this.operatorFactories.map((fn) => fn())
+      { next, error, complete },
+      this.operatorFactories.map((f) => f())
     )
-    let cleanup = this.producer(subscriber)
+    const cleanup = this.producer(subscriber) // also executes the observable
     return new Subscription(cleanup)
   }
 
-  pipe(...fns: OperatorFactory<any>[]) {
-    this.operatorFactories = [...this.operatorFactories, ...fns]
+  pipe(...fs: OperatorFactory<any>[]) {
+    this.operatorFactories.push(...fs)
     return this
   }
 }
