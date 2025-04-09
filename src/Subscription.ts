@@ -1,3 +1,4 @@
+import Subscriber from "./Subscriber"
 import { Cleanup } from "./types"
 
 export default class Subscription {
