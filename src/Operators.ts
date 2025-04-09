@@ -4,7 +4,7 @@ import { Entry } from "./types"
 export const map = <T, V>(f: (x: T) => V) => {
   return (observable: Observable<T>) => {
     return new Observable<V>((subscriber) => {
-      observable.subscribe({
+      const subscription = observable.subscribe({
         next(x) {
           subscriber.next(f(x))
         },
@@ -12,6 +12,10 @@ export const map = <T, V>(f: (x: T) => V) => {
           subscriber.complete()
         },
       })
+
+      return () => {
+        subscription.unsubscribe()
+      }
     })
   }
 }
@@ -124,6 +128,27 @@ export const concatAll = <T>(
       },
       complete() {
         outerCompleted = true
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const limit = (limitBy: number) => (observable: Observable<unknown>) => {
+  return new Observable((subscriber) => {
+    let count = 0
+    const subscription = observable.subscribe({
+      next(x) {
+        count++
+        subscriber.next(x)
+      },
+      complete() {
+        if (count == limitBy) {
+          subscriber.complete()
+        }
       },
     })
 

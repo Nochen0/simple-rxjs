@@ -38,8 +38,8 @@ export default class Observable<T> {
     })
   }
 
-  public concatAll<V>(this: Observable<Observable<V>>): Observable<V> {
-    return new Observable((subscriber) => {
+  public concatAll<V>(this: Observable<Observable<V>>) {
+    return new Observable<V>((subscriber) => {
       let outerCompleted = false
       let innerObservableCount = 0
       let completedInnerObservableCount = 0
@@ -116,8 +116,8 @@ export default class Observable<T> {
     })
   }
 
-  public mergeAll<V>(this: Observable<Observable<V>>): Observable<V> {
-    return new Observable((subscriber) => {
+  public mergeAll<V>(this: Observable<Observable<V>>) {
+    return new Observable<V>((subscriber) => {
       let outerCompleted = false
       let completedInnerObservableCount = 0
       let innerObservableCount = 0
@@ -142,6 +142,27 @@ export default class Observable<T> {
         },
         complete() {
           outerCompleted = true
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public limit(this: Observable<T>, limitBy: number) {
+    return new Observable<T>((subscriber) => {
+      let count = 0
+      const subscription = this.subscribe({
+        next(x) {
+          count++
+          subscriber.next(x)
+        },
+        complete() {
+          if (count == limitBy) {
+            subscriber.complete()
+          }
         },
       })
 
