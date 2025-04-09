@@ -1,14 +1,9 @@
 import Subscriber from "./Subscriber"
 import Subscription from "./Subscription"
-import { Callbacks, Cleanup } from "./types"
+import { Callbacks, Cleanup, Entry } from "./types"
 
 type Producer<T> = (subcriber: Subscriber<T>) => Cleanup
 type Operator<T> = (observable: Observable<any>) => Observable<T>
-type Entry = {
-  observableNumber: number
-  values: { value: any; consumed: boolean }[]
-  done: boolean
-}
 
 export default class Observable<T> {
   private producer: Producer<T>
