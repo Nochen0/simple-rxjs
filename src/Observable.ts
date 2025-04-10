@@ -17,7 +17,7 @@ export default class Observable<T> {
     return new Subscription(cleanup, subscriber)
   }
 
-  public pipe<V>(this: Observable<T>, ...operators: Operator<any>[]) {
+  public pipe<V>(this: Observable<T>, operators: Operator<any>[]) {
     return operators.reduce<Observable<V>>((a, b) => b(a), this)
   }
 

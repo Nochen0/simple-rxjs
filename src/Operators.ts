@@ -143,6 +143,7 @@ export const limit = (limitBy: number) => (observable: Observable<unknown>) => {
     const subscription = observable.subscribe({
       next(x) {
         if (count == limitBy) {
+          subscription.unsubscribe()
           subscriber.complete()
           return
         }
@@ -150,8 +151,8 @@ export const limit = (limitBy: number) => (observable: Observable<unknown>) => {
         subscriber.next(x)
       },
       complete() {
-        subscriber.complete()
         subscription.unsubscribe()
+        subscriber.complete()
       },
     })
 
