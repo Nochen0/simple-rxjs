@@ -46,8 +46,7 @@ export default class Observable<T> {
       let entries: Entry[] = []
       const subscription = this.subscribe({
         next(x) {
-          innerObservableCount++
-          const observableNumber = innerObservableCount
+          const observableNumber = ++innerObservableCount
           entries.push({
             observableNumber,
             values: [],
@@ -59,38 +58,16 @@ export default class Observable<T> {
                 value: y,
                 consumed: false,
               })
-              if (
-                entries.slice(0, observableNumber - 1).filter((z) => z.done)
-                  .length ==
-                observableNumber - 1
-              ) {
-                entries
-                  .slice(
-                    0,
-                    entries.findIndex((z) => !z.done) != -1
-                      ? entries.length
-                      : entries.findIndex((z) => !z.done) + 1
-                  )
-                  .forEach((z) => {
-                    return z.values
-                      .filter((c) => !c.consumed)
-                      .forEach((c) => subscriber.next(c.value))
-                  })
-                entries = entries.flatMap(
-                  ({ observableNumber, values, done }, index) => {
-                    return values.map(({ value }) => {
-                      return {
-                        observableNumber,
-                        done,
-                        values:
-                          index < entries.findIndex((z) => !z.done) + 1
-                            ? [{ value, consumed: true }]
-                            : values,
-                      }
+              entries
+                .slice(0, entries.findIndex((z) => !z.done) + 1)
+                .forEach((z) => {
+                  z.values
+                    .filter((t) => !t.consumed)
+                    .forEach((t) => {
+                      subscriber.next(t.value)
+                      t.consumed = true
                     })
-                  }
-                )
-              }
+                })
             },
             complete() {
               completedInnerObservableCount++
@@ -101,7 +78,18 @@ export default class Observable<T> {
                 completedInnerObservableCount == entries.length
               ) {
                 subscriber.complete()
+                return
               }
+              entries
+                .slice(0, entries.findIndex((z) => !z.done) + 1)
+                .forEach((z) => {
+                  z.values
+                    .filter((t) => !t.consumed)
+                    .forEach((t) => {
+                      subscriber.next(t.value)
+                      t.consumed = true
+                    })
+                })
             },
           })
         },

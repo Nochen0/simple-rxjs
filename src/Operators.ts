@@ -60,15 +60,14 @@ export const mergeAll = <T>(
 export const concatAll = <T>(
   observable: Observable<Observable<T>>
 ): Observable<T> => {
-  return new Observable((subscriber) => {
+  return new Observable<T>((subscriber) => {
     let outerCompleted = false
     let innerObservableCount = 0
     let completedInnerObservableCount = 0
     let entries: Entry[] = []
     const subscription = observable.subscribe({
       next(x) {
-        innerObservableCount++
-        const observableNumber = innerObservableCount
+        const observableNumber = ++innerObservableCount
         entries.push({
           observableNumber,
           values: [],
@@ -80,38 +79,16 @@ export const concatAll = <T>(
               value: y,
               consumed: false,
             })
-            if (
-              entries.slice(0, observableNumber - 1).filter((z) => z.done)
-                .length ==
-              observableNumber - 1
-            ) {
-              entries
-                .slice(
-                  0,
-                  entries.findIndex((z) => !z.done) != -1
-                    ? entries.length
-                    : entries.findIndex((z) => !z.done) + 1
-                )
-                .forEach((z) => {
-                  return z.values
-                    .filter((c) => !c.consumed)
-                    .forEach((c) => subscriber.next(c.value))
-                })
-              entries = entries.flatMap(
-                ({ observableNumber, values, done }, index) => {
-                  return values.map(({ value }) => {
-                    return {
-                      observableNumber,
-                      done,
-                      values:
-                        index < entries.findIndex((z) => !z.done) + 1
-                          ? [{ value, consumed: true }]
-                          : values,
-                    }
+            entries
+              .slice(0, entries.findIndex((z) => !z.done) + 1)
+              .forEach((z) => {
+                z.values
+                  .filter((t) => !t.consumed)
+                  .forEach((t) => {
+                    subscriber.next(t.value)
+                    t.consumed = true
                   })
-                }
-              )
-            }
+              })
           },
           complete() {
             completedInnerObservableCount++
@@ -122,7 +99,18 @@ export const concatAll = <T>(
               completedInnerObservableCount == entries.length
             ) {
               subscriber.complete()
+              return
             }
+            entries
+              .slice(0, entries.findIndex((z) => !z.done) + 1)
+              .forEach((z) => {
+                z.values
+                  .filter((t) => !t.consumed)
+                  .forEach((t) => {
+                    subscriber.next(t.value)
+                    t.consumed = true
+                  })
+              })
           },
         })
       },
