@@ -1,4 +1,4 @@
-import { Callbacks } from "./types"
+import { Callbacks } from "./types.js"
 
 export default class Subscriber<T> {
   private completed: boolean

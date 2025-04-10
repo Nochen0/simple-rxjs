@@ -1,6 +1,6 @@
-import Subscriber from "./Subscriber"
-import Subscription from "./Subscription"
-import { Callbacks, Cleanup, Entry } from "./types"
+import Subscriber from "./Subscriber.js"
+import Subscription from "./Subscription.js"
+import { Callbacks, Cleanup, Entry } from "./types.js"
 
 type Producer<T> = (subcriber: Subscriber<T>) => Cleanup
 type Operator<T> = (observable: Observable<any>) => Observable<T>

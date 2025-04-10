@@ -2,9 +2,10 @@
   "name": "rxjs-simple",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "pnpm tsc --outDir build"
   },
   "keywords": [],
   "author": "",

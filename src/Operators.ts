@@ -1,5 +1,5 @@
-import Observable from "./Observable"
-import { Entry } from "./types"
+import Observable from "./Observable.js"
+import { Entry } from "./types.js"
 
 export const map = <T, V>(f: (x: T) => V) => {
   return (observable: Observable<T>) => {

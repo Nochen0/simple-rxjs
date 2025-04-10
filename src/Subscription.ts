@@ -1,5 +1,5 @@
-import Subscriber from "./Subscriber"
-import { Cleanup } from "./types"
+import Subscriber from "./Subscriber.js"
+import { Cleanup } from "./types.js"
 
 export default class Subscription {
   private cleanup: Cleanup

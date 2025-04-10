@@ -1,4 +1,4 @@
-import Observable from "./Observable"
+import Observable from "./Observable.js"
 
 type FromEvent = <T, V extends Window | Document | HTMLElement>(
   target: V,
