@@ -138,17 +138,20 @@ export const concatAll = <T>(
 }
 
 export const limit = (limitBy: number) => (observable: Observable<unknown>) => {
-  return new Observable((subscriber) => {
-    let count = 0
+  return new Observable<unknown>((subscriber) => {
+    let count = 1
     const subscription = observable.subscribe({
       next(x) {
+        if (count == limitBy) {
+          subscriber.complete()
+          return
+        }
         count++
         subscriber.next(x)
       },
       complete() {
-        if (count == limitBy) {
-          subscriber.complete()
-        }
+        subscriber.complete()
+        subscription.unsubscribe()
       },
     })
 

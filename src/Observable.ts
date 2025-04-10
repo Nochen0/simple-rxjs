@@ -153,16 +153,19 @@ export default class Observable<T> {
 
   public limit(this: Observable<T>, limitBy: number) {
     return new Observable<T>((subscriber) => {
-      let count = 0
+      let count = 1
       const subscription = this.subscribe({
         next(x) {
+          if (count == limitBy) {
+            subscriber.complete()
+            return
+          }
           count++
           subscriber.next(x)
         },
         complete() {
-          if (count == limitBy) {
-            subscriber.complete()
-          }
+          subscriber.complete()
+          subscription.unsubscribe()
         },
       })
 
