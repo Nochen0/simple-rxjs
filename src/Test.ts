@@ -24,8 +24,13 @@ const observable = new Observable<Observable<number>>((subscriber) => {
     clearInterval(intervalId)
   }
 })
-  .take(10)
+  .take(2)
   .concatAll()
+  .takeUntil(
+    new Observable((subscriber) => {
+      setTimeout(() => subscriber.next(5), 1800)
+    })
+  )
   .map((x) => `Current Number is: ${x}`)
 
 observable.subscribe({

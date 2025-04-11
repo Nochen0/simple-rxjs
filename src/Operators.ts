@@ -159,3 +159,28 @@ export const take = (limitBy: number) => (observable: Observable<unknown>) => {
     }
   })
 }
+
+export const takeUntil = <T>(
+  limited: Observable<T>,
+  notifier: Observable<unknown>
+) => {
+  return new Observable<T>((subscriber) => {
+    const notifierSubscription = notifier.subscribe({
+      next(x) {
+        limitedSubscription.unsubscribe()
+        notifierSubscription.unsubscribe()
+        subscriber.complete()
+      },
+      complete() {},
+    })
+
+    const limitedSubscription = limited.subscribe({
+      next(x) {
+        subscriber.next(x)
+      },
+      complete() {
+        subscriber.complete()
+      },
+    })
+  })
+}
