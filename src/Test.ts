@@ -1,14 +1,7 @@
 import Observable from "./Observable"
 
 const observable = new Observable<Observable<number>>((subscriber) => {
-  let count = 0
   const intervalId = setInterval(() => {
-    count++
-    if (count == 5) {
-      subscriber.complete()
-      clearInterval(intervalId)
-      return
-    }
     const innerObservable = new Observable<number>((subscriber) => {
       let count = 0
       const intervalId = setInterval(() => {
@@ -26,8 +19,12 @@ const observable = new Observable<Observable<number>>((subscriber) => {
 
     subscriber.next(innerObservable)
   }, 500)
+
+  return () => {
+    clearInterval(intervalId)
+  }
 })
-  .limit(2)
+  .take(10)
   .concatAll()
   .map((x) => `Current Number is: ${x}`)
 

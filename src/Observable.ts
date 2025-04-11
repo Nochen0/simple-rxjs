@@ -94,6 +94,11 @@ export default class Observable<T> {
           })
         },
         complete() {
+          if (innerObservableCount == 0) {
+            subscriber.complete()
+            subscription.unsubscribe()
+            return
+          }
           outerCompleted = true
         },
       })
@@ -129,6 +134,11 @@ export default class Observable<T> {
           })
         },
         complete() {
+          if (innerObservableCount == 0) {
+            subscriber.complete()
+            subscription.unsubscribe()
+            return
+          }
           outerCompleted = true
         },
       })
@@ -146,6 +156,7 @@ export default class Observable<T> {
         next(x) {
           if (count == limitBy) {
             subscriber.complete()
+            subscription.unsubscribe()
             return
           }
           count++

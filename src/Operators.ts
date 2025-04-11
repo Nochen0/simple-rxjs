@@ -47,6 +47,11 @@ export const mergeAll = <T>(
         })
       },
       complete() {
+        if (innerObservableCount == 0) {
+          subscriber.complete()
+          subscription.unsubscribe()
+          return
+        }
         outerCompleted = true
       },
     })
@@ -115,6 +120,11 @@ export const concatAll = <T>(
         })
       },
       complete() {
+        if (innerObservableCount == 0) {
+          subscriber.complete()
+          subscription.unsubscribe()
+          return
+        }
         outerCompleted = true
       },
     })
@@ -139,8 +149,8 @@ export const take = (limitBy: number) => (observable: Observable<unknown>) => {
         subscriber.next(x)
       },
       complete() {
-        subscription.unsubscribe()
         subscriber.complete()
+        subscription.unsubscribe()
       },
     })
 
