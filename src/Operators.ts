@@ -167,9 +167,9 @@ export const takeUntil = <T>(
   return new Observable<T>((subscriber) => {
     const notifierSubscription = notifier.subscribe({
       next(x) {
+        subscriber.complete()
         limitedSubscription.unsubscribe()
         notifierSubscription.unsubscribe()
-        subscriber.complete()
       },
       complete() {},
     })
@@ -180,7 +180,14 @@ export const takeUntil = <T>(
       },
       complete() {
         subscriber.complete()
+        limitedSubscription.unsubscribe()
+        notifierSubscription.unsubscribe()
       },
     })
+
+    return () => {
+      limitedSubscription.unsubscribe()
+      notifierSubscription.unsubscribe()
+    }
   })
 }
