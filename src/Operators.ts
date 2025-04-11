@@ -125,7 +125,7 @@ export const concatAll = <T>(
   })
 }
 
-export const limit = (limitBy: number) => (observable: Observable<unknown>) => {
+export const take = (limitBy: number) => (observable: Observable<unknown>) => {
   return new Observable<unknown>((subscriber) => {
     let count = 0
     const subscription = observable.subscribe({

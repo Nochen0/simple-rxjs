@@ -139,7 +139,7 @@ export default class Observable<T> {
     })
   }
 
-  public limit(this: Observable<T>, limitBy: number) {
+  public take(this: Observable<T>, limitBy: number) {
     return new Observable<T>((subscriber) => {
       let count = 0
       const subscription = this.subscribe({
