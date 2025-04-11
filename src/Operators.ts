@@ -140,13 +140,14 @@ export const take = (limitBy: number) => (observable: Observable<unknown>) => {
     let count = 0
     const subscription = observable.subscribe({
       next(x) {
-        if (count == limitBy) {
-          subscription.unsubscribe()
-          subscriber.complete()
-          return
-        }
         count++
-        subscriber.next(x)
+        if (count <= limitBy) {
+          subscriber.next(x)
+          if (count == limitBy) {
+            subscriber.complete()
+            subscription.unsubscribe()
+          }
+        }
       },
       complete() {
         subscriber.complete()

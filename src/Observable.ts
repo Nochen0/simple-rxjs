@@ -154,13 +154,14 @@ export default class Observable<T> {
       let count = 0
       const subscription = this.subscribe({
         next(x) {
-          if (count == limitBy) {
-            subscriber.complete()
-            subscription.unsubscribe()
-            return
-          }
           count++
-          subscriber.next(x)
+          if (count <= limitBy) {
+            subscriber.next(x)
+            if (count == limitBy) {
+              subscriber.complete()
+              subscription.unsubscribe()
+            }
+          }
         },
         complete() {
           subscriber.complete()
@@ -199,6 +200,28 @@ export default class Observable<T> {
       return () => {
         limitedSubscription.unsubscribe()
         notifierSubscription.unsubscribe()
+      }
+    })
+  }
+
+  public throttleTime(this: Observable<unknown>, millis: number) {
+    let previousMillis = 0
+    return new Observable((subscriber) => {
+      const subscription = this.subscribe({
+        next(x) {
+          const currentMillis = Date.now()
+          if (currentMillis - previousMillis > millis) {
+            previousMillis = currentMillis
+            subscriber.next(x)
+          }
+        },
+        complete() {
+          subscriber.complete()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
       }
     })
   }
