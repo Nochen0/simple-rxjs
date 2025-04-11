@@ -16,5 +16,7 @@ mouseDrags.subscribe({
     div.style.left = String(`${x.clientX - div.clientWidth / 2}px`)
     div.style.top = String(`${x.clientY - div.clientHeight / 2}px`)
   },
-  complete() {},
+  complete() {
+    console.log("completed")
+  },
 })
