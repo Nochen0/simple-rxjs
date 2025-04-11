@@ -8,7 +8,7 @@ const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
       fromEvent<MouseEvent, HTMLElement>(document.body, "mouseup")
     )
   )
-  .concatAll()
+  .mergeAll()
 
 mouseDrags.subscribe({
   next(x) {
