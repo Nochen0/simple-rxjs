@@ -3,6 +3,7 @@ import { fromEvent } from "./Wrappers.js"
 const div = document.querySelector("div")!
 
 const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
+  .take(2)
   .map(() =>
     fromEvent<MouseEvent, HTMLElement>(document.body, "mousemove").takeUntil(
       fromEvent<MouseEvent, HTMLElement>(document.body, "mouseup")
