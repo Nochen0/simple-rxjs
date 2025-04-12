@@ -6,19 +6,29 @@
     <title>Document</title>
     <script type="module" src="/build/app.js"></script>
   </head>
-  <body style="background-color: black; height: 100vh; position: relative">
+  <body
+    style="
+      background-color: black;
+      height: 100vh;
+      position: relative;
+      color: white;
+    "
+  >
     <div
       style="
         position: relative;
         height: 40px;
         width: 96px;
         border: 1px solid white;
-        color: white;
         display: grid;
         place-content: center;
       "
     >
       You can only drag twice
+    </div>
+    <div style="position: absolute; right: 0; top: 0">
+      <input type="text" />
+      <ul></ul>
     </div>
   </body>
 </html>

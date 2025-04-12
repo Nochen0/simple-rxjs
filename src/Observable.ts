@@ -11,6 +11,17 @@ export default class Observable<T> {
     this.producer = producer
   }
 
+  public static Empty = new Observable<never>((subscriber) => {
+    subscriber.complete()
+  })
+
+  public static of = <V>(xs: V[]) => {
+    return new Observable<V>((subscriber) => {
+      xs.forEach((x) => subscriber.next(x))
+      subscriber.complete()
+    })
+  }
+
   public subscribe(callbacks: Callbacks<T>) {
     const subscriber = new Subscriber(callbacks)
     const cleanup = this.producer(subscriber)
@@ -78,6 +89,7 @@ export default class Observable<T> {
                 completedInnerObservableCount == entries.length
               ) {
                 subscriber.complete()
+                subscription.unsubscribe()
                 return
               }
               entries
@@ -128,6 +140,7 @@ export default class Observable<T> {
                 outerCompleted &&
                 completedInnerObservableCount == innerObservableCount
               ) {
+                subscription.unsubscribe()
                 subscriber.complete()
               }
             },
@@ -144,6 +157,46 @@ export default class Observable<T> {
       })
 
       return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public switchAll<V>(this: Observable<Observable<V>>) {
+    return new Observable<V>((subscriber) => {
+      let outerCompleted = false
+      let innerObservableCount = 0
+      let currentSubscription: undefined | Subscription
+      const subscription = this.subscribe({
+        next(x) {
+          innerObservableCount++
+          currentSubscription?.unsubscribe()
+          currentSubscription = x.subscribe({
+            next(y) {
+              subscriber.next(y)
+            },
+            complete() {
+              if (outerCompleted) {
+                subscriber.complete()
+                subscription.unsubscribe()
+                currentSubscription?.unsubscribe()
+              }
+            },
+          })
+        },
+        complete() {
+          if (innerObservableCount == 0) {
+            subscriber.complete()
+            currentSubscription?.unsubscribe()
+            subscription.unsubscribe()
+            return
+          }
+          outerCompleted = true
+        },
+      })
+
+      return () => {
+        currentSubscription?.unsubscribe()
         subscription.unsubscribe()
       }
     })
@@ -204,14 +257,60 @@ export default class Observable<T> {
     })
   }
 
-  public throttleTime(this: Observable<unknown>, millis: number) {
-    let previousMillis = 0
-    return new Observable((subscriber) => {
+  public throttleTime(this: Observable<T>, millis: number) {
+    return new Observable<T>((subscriber) => {
+      let previousMillis = 0
       const subscription = this.subscribe({
         next(x) {
           const currentMillis = Date.now()
           if (currentMillis - previousMillis > millis) {
             previousMillis = currentMillis
+            subscriber.next(x)
+          }
+        },
+        complete() {
+          subscriber.complete()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public auditTime(this: Observable<T>, millis: number) {
+    return new Observable<T>((subscriber) => {
+      let previousMillis = 0
+      let currentMillis: undefined | number
+      let lastEmission: undefined | T
+      const subscription = this.subscribe({
+        next(x) {
+          currentMillis = Date.now()
+          lastEmission = x
+          if (currentMillis - previousMillis > millis) {
+            previousMillis = Date.now()
+            setTimeout(() => {
+              subscriber.next(lastEmission!)
+            }, millis)
+          }
+        },
+        complete() {
+          subscriber.complete()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public filter(this: Observable<T>, predicate: (x: T) => boolean) {
+    return new Observable<T>((subscriber) => {
+      const subscription = this.subscribe({
+        next(x) {
+          if (predicate(x)) {
             subscriber.next(x)
           }
         },

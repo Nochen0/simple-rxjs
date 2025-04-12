@@ -1,4 +1,5 @@
 import Observable from "./Observable.js"
+import Subscription from "./Subscription.js"
 import { Entry } from "./types.js"
 
 export const map = <T, V>(f: (x: T) => V) => {
@@ -41,6 +42,7 @@ export const mergeAll = <T>(
               outerCompleted &&
               completedInnerObservableCount == innerObservableCount
             ) {
+              subscription.unsubscribe()
               subscriber.complete()
             }
           },
@@ -104,6 +106,7 @@ export const concatAll = <T>(
               completedInnerObservableCount == entries.length
             ) {
               subscriber.complete()
+              subscription.unsubscribe()
               return
             }
             entries
@@ -130,6 +133,46 @@ export const concatAll = <T>(
     })
 
     return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const switchAll = <V>(observable: Observable<Observable<V>>) => {
+  return new Observable<V>((subscriber) => {
+    let outerCompleted = false
+    let innerObservableCount = 0
+    let currentSubscription: undefined | Subscription
+    const subscription = observable.subscribe({
+      next(x) {
+        innerObservableCount++
+        currentSubscription?.unsubscribe()
+        currentSubscription = x.subscribe({
+          next(y) {
+            subscriber.next(y)
+          },
+          complete() {
+            if (outerCompleted) {
+              subscriber.complete()
+              subscription.unsubscribe()
+              currentSubscription?.unsubscribe()
+            }
+          },
+        })
+      },
+      complete() {
+        if (innerObservableCount == 0) {
+          subscriber.complete()
+          currentSubscription?.unsubscribe()
+          subscription.unsubscribe()
+          return
+        }
+        outerCompleted = true
+      },
+    })
+
+    return () => {
+      currentSubscription?.unsubscribe()
       subscription.unsubscribe()
     }
   })
@@ -190,5 +233,81 @@ export const takeUntil = <T>(
       limitedSubscription.unsubscribe()
       notifierSubscription.unsubscribe()
     }
+  })
+}
+
+export const throttleTime = <T>(observable: Observable<T>, millis: number) => {
+  return new Observable<T>((subscriber) => {
+    let previousMillis = 0
+    const subscription = observable.subscribe({
+      next(x) {
+        const currentMillis = Date.now()
+        if (currentMillis - previousMillis > millis) {
+          previousMillis = currentMillis
+          subscriber.next(x)
+        }
+      },
+      complete() {
+        subscriber.complete()
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const auditTime = <T>(observable: Observable<T>, millis: number) => {
+  return new Observable<T>((subscriber) => {
+    let previousMillis = 0
+    let currentMillis: undefined | number
+    let lastEmission: undefined | T
+    const subscription = observable.subscribe({
+      next(x) {
+        currentMillis = Date.now()
+        lastEmission = x
+        if (currentMillis - previousMillis > millis) {
+          previousMillis = Date.now()
+          setTimeout(() => {
+            subscriber.next(lastEmission!)
+          }, millis)
+        }
+      },
+      complete() {
+        subscriber.complete()
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const filter = <T>(
+  observable: Observable<T>,
+  predicate: (x: T) => boolean
+) => {
+  return new Observable<T>((subscriber) => {
+    const subscription = observable.subscribe({
+      next(x) {
+        if (predicate(x)) subscriber.next(x)
+      },
+      complete() {
+        subscriber.complete()
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const of = <T>(xs: T[]) => {
+  return new Observable<T>((subscriber) => {
+    xs.forEach((x) => subscriber.next(x))
+    subscriber.complete()
   })
 }
