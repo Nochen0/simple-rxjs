@@ -42,8 +42,8 @@ const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
   .map<Observable<string[][] | number>>((x) =>
     x.length ? fromFetch<string[][]>(getRequestURL(x)) : of([-1])
   )
-
   .switchAll()
+  .takeUntil(mouseDrags)
 
 keydowns.subscribe({
   next(x) {
@@ -70,6 +70,6 @@ mouseDrags.subscribe({
     div.style.top = String(`${x.clientY - div.offsetHeight / 2}px`)
   },
   complete() {
-    console.log("completed")
+    console.log("done")
   },
 })

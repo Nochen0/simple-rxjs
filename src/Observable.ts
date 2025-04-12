@@ -52,12 +52,11 @@ export default class Observable<T> {
   public concatAll<V>(this: Observable<Observable<V>>) {
     return new Observable<V>((subscriber) => {
       let outerCompleted = false
-      let innerObservableCount = 0
-      let completedInnerObservableCount = 0
+      let innerSubscriptions: Subscription[] = []
       let entries: Entry[] = []
       const subscription = this.subscribe({
         next(x) {
-          const observableNumber = ++innerObservableCount
+          const observableNumber = innerSubscriptions.length + 1
           entries.push({
             observableNumber,
             values: [],
@@ -81,12 +80,11 @@ export default class Observable<T> {
                 })
             },
             complete() {
-              completedInnerObservableCount++
               entries[observableNumber - 1].done = true
               innerSubscription.unsubscribe()
               if (
                 outerCompleted &&
-                completedInnerObservableCount == entries.length
+                innerSubscriptions.every((x) => x.unsubscribed)
               ) {
                 subscriber.complete()
                 subscription.unsubscribe()
@@ -104,9 +102,10 @@ export default class Observable<T> {
                 })
             },
           })
+          innerSubscriptions.push(innerSubscription)
         },
         complete() {
-          if (innerObservableCount == 0) {
+          if (innerSubscriptions.every((x) => x.unsubscribed)) {
             subscriber.complete()
             subscription.unsubscribe()
             return
@@ -117,6 +116,7 @@ export default class Observable<T> {
 
       return () => {
         subscription.unsubscribe()
+        innerSubscriptions.forEach((x) => x.unsubscribe())
       }
     })
   }
@@ -124,30 +124,28 @@ export default class Observable<T> {
   public mergeAll<V>(this: Observable<Observable<V>>) {
     return new Observable<V>((subscriber) => {
       let outerCompleted = false
-      let completedInnerObservableCount = 0
-      let innerObservableCount = 0
+      let innerSubscriptions: Subscription[] = []
       const subscription = this.subscribe({
         next(x) {
-          innerObservableCount++
           const innerSubscription = x.subscribe({
             next(y) {
               subscriber.next(y)
             },
             complete() {
               innerSubscription.unsubscribe()
-              completedInnerObservableCount++
               if (
                 outerCompleted &&
-                completedInnerObservableCount == innerObservableCount
+                innerSubscriptions.every((x) => x.unsubscribed)
               ) {
-                subscription.unsubscribe()
                 subscriber.complete()
+                subscription.unsubscribe()
               }
             },
           })
+          innerSubscriptions.push(innerSubscription)
         },
         complete() {
-          if (innerObservableCount == 0) {
+          if (innerSubscriptions.every((x) => x.unsubscribed)) {
             subscriber.complete()
             subscription.unsubscribe()
             return
@@ -158,6 +156,7 @@ export default class Observable<T> {
 
       return () => {
         subscription.unsubscribe()
+        innerSubscriptions.forEach((x) => x.unsubscribe())
       }
     })
   }
@@ -165,17 +164,16 @@ export default class Observable<T> {
   public switchAll<V>(this: Observable<Observable<V>>) {
     return new Observable<V>((subscriber) => {
       let outerCompleted = false
-      let innerObservableCount = 0
       let currentSubscription: undefined | Subscription
       const subscription = this.subscribe({
         next(x) {
-          innerObservableCount++
           currentSubscription?.unsubscribe()
           currentSubscription = x.subscribe({
             next(y) {
               subscriber.next(y)
             },
             complete() {
+              currentSubscription?.unsubscribe()
               if (outerCompleted) {
                 subscriber.complete()
                 subscription.unsubscribe()
@@ -185,10 +183,10 @@ export default class Observable<T> {
           })
         },
         complete() {
-          if (innerObservableCount == 0) {
+          if (!currentSubscription || currentSubscription?.unsubscribed) {
             subscriber.complete()
-            currentSubscription?.unsubscribe()
             subscription.unsubscribe()
+            currentSubscription?.unsubscribe()
             return
           }
           outerCompleted = true

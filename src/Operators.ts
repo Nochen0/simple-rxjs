@@ -27,10 +27,9 @@ export const mergeAll = <T>(
   return new Observable((subscriber) => {
     let outerCompleted = false
     let completedInnerObservableCount = 0
-    let innerObservableCount = 0
+    let innerSubscriptions: Subscription[] = []
     const subscription = observable.subscribe({
       next(x) {
-        innerObservableCount++
         const innerSubscription = x.subscribe({
           next(y) {
             subscriber.next(y)
@@ -40,16 +39,17 @@ export const mergeAll = <T>(
             completedInnerObservableCount++
             if (
               outerCompleted &&
-              completedInnerObservableCount == innerObservableCount
+              completedInnerObservableCount == innerSubscriptions.length
             ) {
-              subscription.unsubscribe()
               subscriber.complete()
+              subscription.unsubscribe()
             }
           },
         })
+        innerSubscriptions.push(innerSubscription)
       },
       complete() {
-        if (innerObservableCount == 0) {
+        if (innerSubscriptions.every((x) => x.unsubscribed)) {
           subscriber.complete()
           subscription.unsubscribe()
           return
@@ -60,6 +60,7 @@ export const mergeAll = <T>(
 
     return () => {
       subscription.unsubscribe()
+      innerSubscriptions.forEach((x) => x.unsubscribe())
     }
   })
 }
@@ -69,12 +70,11 @@ export const concatAll = <T>(
 ): Observable<T> => {
   return new Observable<T>((subscriber) => {
     let outerCompleted = false
-    let innerObservableCount = 0
-    let completedInnerObservableCount = 0
+    let innerSubscriptions: Subscription[] = []
     let entries: Entry[] = []
     const subscription = observable.subscribe({
       next(x) {
-        const observableNumber = ++innerObservableCount
+        const observableNumber = innerSubscriptions.length + 1
         entries.push({
           observableNumber,
           values: [],
@@ -98,12 +98,11 @@ export const concatAll = <T>(
               })
           },
           complete() {
-            completedInnerObservableCount++
             entries[observableNumber - 1].done = true
             innerSubscription.unsubscribe()
             if (
               outerCompleted &&
-              completedInnerObservableCount == entries.length
+              innerSubscriptions.every((x) => x.unsubscribed)
             ) {
               subscriber.complete()
               subscription.unsubscribe()
@@ -121,9 +120,10 @@ export const concatAll = <T>(
               })
           },
         })
+        innerSubscriptions.push(innerSubscription)
       },
       complete() {
-        if (innerObservableCount == 0) {
+        if (innerSubscriptions.every((x) => x.unsubscribed)) {
           subscriber.complete()
           subscription.unsubscribe()
           return
@@ -134,6 +134,7 @@ export const concatAll = <T>(
 
     return () => {
       subscription.unsubscribe()
+      innerSubscriptions.forEach((x) => x.unsubscribe())
     }
   })
 }
@@ -141,17 +142,16 @@ export const concatAll = <T>(
 export const switchAll = <V>(observable: Observable<Observable<V>>) => {
   return new Observable<V>((subscriber) => {
     let outerCompleted = false
-    let innerObservableCount = 0
     let currentSubscription: undefined | Subscription
     const subscription = observable.subscribe({
       next(x) {
-        innerObservableCount++
         currentSubscription?.unsubscribe()
         currentSubscription = x.subscribe({
           next(y) {
             subscriber.next(y)
           },
           complete() {
+            currentSubscription?.unsubscribe()
             if (outerCompleted) {
               subscriber.complete()
               subscription.unsubscribe()
@@ -161,10 +161,10 @@ export const switchAll = <V>(observable: Observable<Observable<V>>) => {
         })
       },
       complete() {
-        if (innerObservableCount == 0) {
+        if (!currentSubscription || currentSubscription?.unsubscribed) {
           subscriber.complete()
-          currentSubscription?.unsubscribe()
           subscription.unsubscribe()
+          currentSubscription?.unsubscribe()
           return
         }
         outerCompleted = true
