@@ -1,8 +1,6 @@
 import { fromEvent } from "./Wrappers.js"
 
 const div = document.querySelector("div")!
-const divWidth = div.clientWidth
-const divHeight = div.clientHeight
 
 const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
   .take(2)
@@ -15,8 +13,8 @@ const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
 
 mouseDrags.subscribe({
   next(x) {
-    div.style.left = String(`${x.clientX - divWidth / 2}px`)
-    div.style.top = String(`${x.clientY - divHeight / 2}px`)
+    div.style.left = String(`${x.clientX - div.offsetWidth / 2}px`)
+    div.style.top = String(`${x.clientY - div.offsetHeight / 2}px`)
   },
   complete() {
     console.log("completed")
