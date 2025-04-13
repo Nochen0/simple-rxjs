@@ -40,6 +40,7 @@ export default class Observable<T> {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
       })
 
@@ -268,6 +269,7 @@ export default class Observable<T> {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
       })
 
@@ -295,6 +297,7 @@ export default class Observable<T> {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
       })
 
@@ -314,6 +317,32 @@ export default class Observable<T> {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public distinct<V>(
+    this: Observable<T>,
+    comparator: (x: T) => V = (x) => x as any as V
+  ) {
+    let previous: undefined | V
+    return new Observable<T>((subscriber) => {
+      const subscription = this.subscribe({
+        next(x) {
+          if (!Object.is(previous, comparator(x))) {
+            subscriber.next(x)
+            previous = comparator(x)
+          }
+        },
+        complete() {
+          subscriber.complete()
+          subscription.unsubscribe()
         },
       })
 

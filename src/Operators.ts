@@ -11,6 +11,7 @@ export const map = <T, V>(f: (x: T) => V) => {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
       })
 
@@ -249,6 +250,7 @@ export const throttleTime = <T>(observable: Observable<T>, millis: number) => {
       },
       complete() {
         subscriber.complete()
+        subscription.unsubscribe()
       },
     })
 
@@ -276,6 +278,7 @@ export const auditTime = <T>(observable: Observable<T>, millis: number) => {
       },
       complete() {
         subscriber.complete()
+        subscription.unsubscribe()
       },
     })
 
@@ -296,6 +299,7 @@ export const filter = <T>(
       },
       complete() {
         subscriber.complete()
+        subscription.unsubscribe()
       },
     })
 
