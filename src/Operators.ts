@@ -13,6 +13,9 @@ export const map = <T, V>(f: (x: T) => V) => {
           subscriber.complete()
           subscription.unsubscribe()
         },
+        error(e) {
+          subscriber.error(e)
+        },
       })
 
       return () => {
@@ -46,6 +49,9 @@ export const mergeAll = <T>(
               subscription.unsubscribe()
             }
           },
+          error(e) {
+            subscriber.error(e)
+          },
         })
         innerSubscriptions.push(innerSubscription)
       },
@@ -56,6 +62,9 @@ export const mergeAll = <T>(
           return
         }
         outerCompleted = true
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 
@@ -120,6 +129,9 @@ export const concatAll = <T>(
                   })
               })
           },
+          error(e) {
+            subscriber.error(e)
+          },
         })
         innerSubscriptions.push(innerSubscription)
       },
@@ -130,6 +142,9 @@ export const concatAll = <T>(
           return
         }
         outerCompleted = true
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 
@@ -159,6 +174,9 @@ export const switchAll = <V>(observable: Observable<Observable<V>>) => {
               currentSubscription?.unsubscribe()
             }
           },
+          error(e) {
+            subscriber.error(e)
+          },
         })
       },
       complete() {
@@ -169,6 +187,9 @@ export const switchAll = <V>(observable: Observable<Observable<V>>) => {
           return
         }
         outerCompleted = true
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 
@@ -197,6 +218,9 @@ export const take = (limitBy: number) => (observable: Observable<unknown>) => {
         subscriber.complete()
         subscription.unsubscribe()
       },
+      error(e) {
+        subscriber.error(e)
+      },
     })
 
     return () => {
@@ -217,6 +241,9 @@ export const takeUntil = <T>(
         notifierSubscription.unsubscribe()
       },
       complete() {},
+      error(e) {
+        subscriber.error(e)
+      },
     })
 
     const limitedSubscription = limited.subscribe({
@@ -227,6 +254,9 @@ export const takeUntil = <T>(
         subscriber.complete()
         limitedSubscription.unsubscribe()
         notifierSubscription.unsubscribe()
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 
@@ -251,6 +281,9 @@ export const throttleTime = <T>(observable: Observable<T>, millis: number) => {
       complete() {
         subscriber.complete()
         subscription.unsubscribe()
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 
@@ -280,6 +313,9 @@ export const auditTime = <T>(observable: Observable<T>, millis: number) => {
         subscriber.complete()
         subscription.unsubscribe()
       },
+      error(e) {
+        subscriber.error(e)
+      },
     })
 
     return () => {
@@ -300,6 +336,9 @@ export const filter = <T>(
       complete() {
         subscriber.complete()
         subscription.unsubscribe()
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 

@@ -4,6 +4,9 @@ import { Callbacks, Cleanup, Entry } from "./types.js"
 
 type Producer<T> = (subcriber: Subscriber<T>) => Cleanup
 type Operator<T> = (observable: Observable<any>) => Observable<T>
+type EitherCallbacks<T> =
+  | [(x: T) => void, (() => void)?, ((e: Error) => void)?]
+  | Callbacks<T>
 
 export default class Observable<T> {
   private producer: Producer<T>
@@ -22,8 +25,11 @@ export default class Observable<T> {
     })
   }
 
-  public subscribe(callbacks: Callbacks<T>) {
-    const subscriber = new Subscriber(callbacks)
+  public subscribe(callbacks: EitherCallbacks<T>) {
+    const cbs = Array.isArray(callbacks)
+      ? { next: callbacks[0], complete: callbacks[1], error: callbacks[2] }
+      : callbacks
+    const subscriber = new Subscriber(cbs)
     const cleanup = this.producer(subscriber)
     return new Subscription(cleanup, subscriber)
   }
@@ -41,6 +47,9 @@ export default class Observable<T> {
         complete() {
           subscriber.complete()
           subscription.unsubscribe()
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -102,6 +111,9 @@ export default class Observable<T> {
                     })
                 })
             },
+            error(e) {
+              subscriber.error(e)
+            },
           })
           innerSubscriptions.push(innerSubscription)
         },
@@ -112,6 +124,9 @@ export default class Observable<T> {
             return
           }
           outerCompleted = true
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -142,6 +157,9 @@ export default class Observable<T> {
                 subscription.unsubscribe()
               }
             },
+            error(e) {
+              subscriber.error(e)
+            },
           })
           innerSubscriptions.push(innerSubscription)
         },
@@ -152,6 +170,9 @@ export default class Observable<T> {
             return
           }
           outerCompleted = true
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -181,6 +202,9 @@ export default class Observable<T> {
                 currentSubscription?.unsubscribe()
               }
             },
+            error(e) {
+              subscriber.error(e)
+            },
           })
         },
         complete() {
@@ -191,6 +215,9 @@ export default class Observable<T> {
             return
           }
           outerCompleted = true
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -219,6 +246,9 @@ export default class Observable<T> {
           subscriber.complete()
           subscription.unsubscribe()
         },
+        error(e) {
+          subscriber.error(e)
+        },
       })
 
       return () => {
@@ -236,6 +266,9 @@ export default class Observable<T> {
           notifierSubscription.unsubscribe()
         },
         complete() {},
+        error(e) {
+          subscriber.error(e)
+        },
       })
 
       const limitedSubscription = this.subscribe({
@@ -246,6 +279,9 @@ export default class Observable<T> {
           subscriber.complete()
           limitedSubscription.unsubscribe()
           notifierSubscription.unsubscribe()
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -270,6 +306,9 @@ export default class Observable<T> {
         complete() {
           subscriber.complete()
           subscription.unsubscribe()
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -299,6 +338,9 @@ export default class Observable<T> {
           subscriber.complete()
           subscription.unsubscribe()
         },
+        error(e) {
+          subscriber.error(e)
+        },
       })
 
       return () => {
@@ -318,6 +360,9 @@ export default class Observable<T> {
         complete() {
           subscriber.complete()
           subscription.unsubscribe()
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -343,6 +388,9 @@ export default class Observable<T> {
         complete() {
           subscriber.complete()
           subscription.unsubscribe()
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 

@@ -15,9 +15,15 @@ export default class Subscriber<T> {
   public complete(silent = false) {
     if (!this.completed) {
       this.completed = true
-      if (!silent) {
+      if (!silent && this.callbacks.complete) {
         this.callbacks.complete()
       }
+    }
+  }
+
+  public error(e: Error) {
+    if (!this.completed && this.callbacks.error) {
+      this.callbacks.error(e)
     }
   }
 }
