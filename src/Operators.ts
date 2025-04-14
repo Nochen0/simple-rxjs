@@ -354,3 +354,59 @@ export const of = <T>(xs: T[]) => {
     subscriber.complete()
   })
 }
+
+export const distinctUntilChanged = <T, V>(
+  observable: Observable<T>,
+  comparator: (x: T) => V = (x) => x as any as V
+) => {
+  let previous: undefined | V
+  return new Observable<T>((subscriber) => {
+    const subscription = observable.subscribe({
+      next(x) {
+        if (!Object.is(previous, comparator(x))) {
+          subscriber.next(x)
+          previous = comparator(x)
+        }
+      },
+      complete() {
+        subscriber.complete()
+        subscription.unsubscribe()
+      },
+      error(e) {
+        subscriber.error(e)
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const distinct = <T, V>(
+  observable: Observable<T>,
+  comparator: (x: T) => V = (x) => x as any as V
+) => {
+  let previousValues: V[] = []
+  return new Observable<T>((subscriber) => {
+    const subscription = observable.subscribe({
+      next(x) {
+        if (previousValues.find((y) => Object.is(y, comparator(x)))) {
+          subscriber.next(x)
+          previousValues.push(comparator(x))
+        }
+      },
+      complete() {
+        subscriber.complete()
+        subscription.unsubscribe()
+      },
+      error(e) {
+        subscriber.error(e)
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}

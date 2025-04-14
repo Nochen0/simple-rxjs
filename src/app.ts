@@ -39,7 +39,7 @@ const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
 const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
   .auditTime(300)
   .map<string>((x) => x.target.value.trim())
-  .distinct()
+  .distinctUntilChanged()
   .map<Observable<string[][] | number>>((x) =>
     x.length ? fromFetch<string[][]>(getRequestURL(x)) : of([-1])
   )

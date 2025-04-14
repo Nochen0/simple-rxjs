@@ -372,7 +372,7 @@ export default class Observable<T> {
     })
   }
 
-  public distinct<V>(
+  public distinctUntilChanged<V>(
     this: Observable<T>,
     comparator: (x: T) => V = (x) => x as any as V
   ) {
@@ -383,6 +383,34 @@ export default class Observable<T> {
           if (!Object.is(previous, comparator(x))) {
             subscriber.next(x)
             previous = comparator(x)
+          }
+        },
+        complete() {
+          subscriber.complete()
+          subscription.unsubscribe()
+        },
+        error(e) {
+          subscriber.error(e)
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public distinct<V>(
+    this: Observable<T>,
+    comparator: (x: T) => V = (x) => x as any as V
+  ) {
+    let previousValues: V[] = []
+    return new Observable<T>((subscriber) => {
+      const subscription = this.subscribe({
+        next(x) {
+          if (previousValues.find((y) => Object.is(y, comparator(x)))) {
+            subscriber.next(x)
+            previousValues.push(comparator(x))
           }
         },
         complete() {
