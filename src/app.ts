@@ -38,9 +38,10 @@ const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
 
 const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
   .auditTime(300)
-  .map<string>((x) => x.target.value)
+  .map<string>((x) => x.target.value.trim())
+  .distinct()
   .map<Observable<string[][] | number>>((x) =>
-    x.trim().length ? fromFetch<string[][]>(getRequestURL(x)) : of([-1])
+    x.length ? fromFetch<string[][]>(getRequestURL(x)) : of([-1])
   )
   .switchAll()
   .takeUntil(mouseDrags)
