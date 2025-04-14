@@ -21,8 +21,8 @@ export default class Subscriber<T> {
     }
   }
 
-  public error(e: Error) {
-    if (!this.completed && this.callbacks.error) {
+  public error(e: Error, force: boolean = false) {
+    if (this.callbacks.error && (!this.completed || force)) {
       this.callbacks.error(e)
     }
   }
