@@ -25,6 +25,31 @@ export default class Observable<T> {
     })
   }
 
+  public static interval = (millis: number) => {
+    return new Observable<void>((subscriber) => {
+      const intervalId = setInterval(() => {
+        subscriber.next()
+      }, millis)
+
+      return () => {
+        clearInterval(intervalId)
+      }
+    })
+  }
+
+  public static timeout = (millis: number) => {
+    return new Observable<void>((subscriber) => {
+      const timeoutId = setTimeout(() => {
+        subscriber.next()
+        subscriber.complete()
+      }, millis)
+
+      return () => {
+        clearTimeout(timeoutId)
+      }
+    })
+  }
+
   public subscribe(callbacks: EitherCallbacks<T>) {
     const cbs = Array.isArray(callbacks)
       ? { next: callbacks[0], complete: callbacks[1], error: callbacks[2] }
@@ -424,6 +449,41 @@ export default class Observable<T> {
 
       return () => {
         subscription.unsubscribe()
+      }
+    })
+  }
+
+  public concatWith<V>(this: Observable<T>, observables: Observable<V>[]) {
+    return new Observable<T | V>((subscriber) => {
+      let currentSubscription: undefined | Subscription
+      const sourceSubscription = this.subscribe({
+        next(x) {
+          subscriber.next(x)
+        },
+        complete() {
+          observables
+            .map(
+              (x, i) => () =>
+                new Promise<void>((resolve) => {
+                  currentSubscription = x.subscribe({
+                    next(y) {
+                      subscriber.next(y)
+                    },
+                    complete() {
+                      if (observables.length == i + 1) subscriber.complete()
+                      currentSubscription!.unsubscribe()
+                      resolve()
+                    },
+                  })
+                })
+            )
+            .reduce((a, b) => a.then(b), Promise.resolve())
+        },
+      })
+
+      return () => {
+        currentSubscription?.unsubscribe()
+        sourceSubscription.unsubscribe()
       }
     })
   }

@@ -3,9 +3,9 @@ import Subscription from "./Subscription.js"
 import { Entry } from "./types.js"
 
 export const map = <T, V>(f: (x: T) => V) => {
-  return (observable: Observable<T>) => {
+  return (source: Observable<T>) => {
     return new Observable<V>((subscriber) => {
-      const subscription = observable.subscribe({
+      const subscription = source.subscribe({
         next(x) {
           subscriber.next(f(x))
         },
@@ -26,13 +26,13 @@ export const map = <T, V>(f: (x: T) => V) => {
 }
 
 export const mergeAll = <T>(
-  observable: Observable<Observable<T>>
+  source: Observable<Observable<T>>
 ): Observable<T> => {
   return new Observable((subscriber) => {
     let outerCompleted = false
     let completedInnerObservableCount = 0
     let innerSubscriptions: Subscription[] = []
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         const innerSubscription = x.subscribe({
           next(y) {
@@ -76,13 +76,13 @@ export const mergeAll = <T>(
 }
 
 export const concatAll = <T>(
-  observable: Observable<Observable<T>>
+  source: Observable<Observable<T>>
 ): Observable<T> => {
   return new Observable<T>((subscriber) => {
     let outerCompleted = false
     let innerSubscriptions: Subscription[] = []
     let entries: Entry[] = []
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         const observableNumber = innerSubscriptions.length + 1
         entries.push({
@@ -155,11 +155,11 @@ export const concatAll = <T>(
   })
 }
 
-export const switchAll = <V>(observable: Observable<Observable<V>>) => {
+export const switchAll = <V>(source: Observable<Observable<V>>) => {
   return new Observable<V>((subscriber) => {
     let outerCompleted = false
     let currentSubscription: undefined | Subscription
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         currentSubscription?.unsubscribe()
         currentSubscription = x.subscribe({
@@ -200,10 +200,10 @@ export const switchAll = <V>(observable: Observable<Observable<V>>) => {
   })
 }
 
-export const take = (limitBy: number) => (observable: Observable<unknown>) => {
+export const take = (limitBy: number) => (source: Observable<unknown>) => {
   return new Observable<unknown>((subscriber) => {
     let count = 0
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         count++
         if (count <= limitBy) {
@@ -267,10 +267,10 @@ export const takeUntil = <T>(
   })
 }
 
-export const throttleTime = <T>(observable: Observable<T>, millis: number) => {
+export const throttleTime = <T>(source: Observable<T>, millis: number) => {
   return new Observable<T>((subscriber) => {
     let previousMillis = 0
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         const currentMillis = Date.now()
         if (currentMillis - previousMillis > millis) {
@@ -293,12 +293,12 @@ export const throttleTime = <T>(observable: Observable<T>, millis: number) => {
   })
 }
 
-export const auditTime = <T>(observable: Observable<T>, millis: number) => {
+export const auditTime = <T>(source: Observable<T>, millis: number) => {
   return new Observable<T>((subscriber) => {
     let previousMillis = 0
     let currentMillis: undefined | number
     let lastEmission: undefined | T
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         currentMillis = Date.now()
         lastEmission = x
@@ -325,11 +325,11 @@ export const auditTime = <T>(observable: Observable<T>, millis: number) => {
 }
 
 export const filter = <T>(
-  observable: Observable<T>,
+  source: Observable<T>,
   predicate: (x: T) => boolean
 ) => {
   return new Observable<T>((subscriber) => {
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         if (predicate(x)) subscriber.next(x)
       },
@@ -356,12 +356,12 @@ export const of = <T>(xs: T[]) => {
 }
 
 export const distinctUntilChanged = <T, V>(
-  observable: Observable<T>,
+  source: Observable<T>,
   comparator: (x: T) => V = (x) => x as any as V
 ) => {
   let previous: undefined | V
   return new Observable<T>((subscriber) => {
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         if (!Object.is(previous, comparator(x))) {
           subscriber.next(x)
@@ -384,12 +384,12 @@ export const distinctUntilChanged = <T, V>(
 }
 
 export const distinct = <T, V>(
-  observable: Observable<T>,
+  source: Observable<T>,
   comparator: (x: T) => V = (x) => x as any as V
 ) => {
   let previousValues: V[] = []
   return new Observable<T>((subscriber) => {
-    const subscription = observable.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         if (previousValues.find((y) => Object.is(y, comparator(x)))) {
           subscriber.next(x)
@@ -407,6 +407,69 @@ export const distinct = <T, V>(
 
     return () => {
       subscription.unsubscribe()
+    }
+  })
+}
+
+export const interval = (millis: number) => {
+  return new Observable<void>((subscriber) => {
+    const intervalId = setInterval(() => {
+      subscriber.next()
+    }, millis)
+
+    return () => {
+      clearInterval(intervalId)
+    }
+  })
+}
+
+export const timeout = (millis: number) => {
+  return new Observable<void>((subscriber) => {
+    const timeoutId = setTimeout(() => {
+      subscriber.next()
+      subscriber.complete()
+    }, millis)
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  })
+}
+
+export const concatWith = <T, V>(
+  source: Observable<T>,
+  observables: Observable<V>[]
+) => {
+  return new Observable<T | V>((subscriber) => {
+    let currentSubscription: undefined | Subscription
+    const sourceSubscription = source.subscribe({
+      next(x) {
+        subscriber.next(x)
+      },
+      complete() {
+        observables
+          .map(
+            (x, i) => () =>
+              new Promise<void>((resolve) => {
+                currentSubscription = x.subscribe({
+                  next(y) {
+                    subscriber.next(y)
+                  },
+                  complete() {
+                    if (observables.length == i + 1) subscriber.complete()
+                    currentSubscription!.unsubscribe()
+                    resolve()
+                  },
+                })
+              })
+          )
+          .reduce((a, b) => a.then(b), Promise.resolve())
+      },
+    })
+
+    return () => {
+      currentSubscription?.unsubscribe()
+      sourceSubscription.unsubscribe()
     }
   })
 }
