@@ -47,8 +47,26 @@ export default class Observable<T> {
     })
   }
 
-  public subscribe(callbacks: Callbacks<T>) {
-    const subscriber = new Subscriber(callbacks)
+  subscribe(callbacks: Callbacks<T>): Subscription
+  subscribe(
+    next: (x: T) => void,
+    complete?: () => void,
+    error?: () => void
+  ): Subscription
+  public subscribe(
+    callbacksOrNext: Callbacks<T> | ((x: T) => void),
+    complete?: () => void,
+    error?: () => void
+  ): Subscription {
+    let cbs: Callbacks<T> = {} as any
+    if (callbacksOrNext instanceof Function) {
+      cbs.next = callbacksOrNext
+      cbs.complete = complete
+      cbs.error = error
+    } else {
+      cbs = callbacksOrNext
+    }
+    const subscriber = new Subscriber(cbs)
     const cleanup = this.producer(subscriber)
     return new Subscription(cleanup, subscriber)
   }
