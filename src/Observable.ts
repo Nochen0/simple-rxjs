@@ -4,9 +4,6 @@ import { Callbacks, Cleanup, Entry } from "./types.js"
 
 type Producer<T> = (subcriber: Subscriber<T>) => Cleanup
 type Operator<T> = (observable: Observable<any>) => Observable<T>
-type EitherCallbacks<T> =
-  | [(x: T) => void, (() => void)?, ((e: Error) => void)?]
-  | Callbacks<T>
 
 export default class Observable<T> {
   private producer: Producer<T>
@@ -50,11 +47,8 @@ export default class Observable<T> {
     })
   }
 
-  public subscribe(callbacks: EitherCallbacks<T>) {
-    const cbs = Array.isArray(callbacks)
-      ? { next: callbacks[0], complete: callbacks[1], error: callbacks[2] }
-      : callbacks
-    const subscriber = new Subscriber(cbs)
+  public subscribe(callbacks: Callbacks<T>) {
+    const subscriber = new Subscriber(callbacks)
     const cleanup = this.producer(subscriber)
     return new Subscription(cleanup, subscriber)
   }
@@ -485,6 +479,24 @@ export default class Observable<T> {
         currentSubscription?.unsubscribe()
         sourceSubscription.unsubscribe()
       }
+    })
+  }
+
+  public debounceTime(this: Observable<T>, millis: number) {
+    return new Observable<T>((subscriber) => {
+      let currentTimeoutId: null | number
+      this.subscribe({
+        next(x) {
+          if (currentTimeoutId) {
+            clearTimeout(currentTimeoutId)
+            currentTimeoutId = null
+          }
+          currentTimeoutId = setTimeout(() => {
+            subscriber.next(x)
+          }, millis)
+        },
+        complete() {},
+      })
     })
   }
 }

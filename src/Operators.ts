@@ -473,3 +473,21 @@ export const concatWith = <T, V>(
     }
   })
 }
+
+export const debounceTime = <T>(source: Observable<T>, millis: number) => {
+  return new Observable<T>((subscriber) => {
+    let currentTimeoutId: null | number
+    source.subscribe({
+      next(x) {
+        if (currentTimeoutId) {
+          clearTimeout(currentTimeoutId)
+          currentTimeoutId = null
+        }
+        currentTimeoutId = setTimeout(() => {
+          subscriber.next(x)
+        }, millis)
+      },
+      complete() {},
+    })
+  })
+}
