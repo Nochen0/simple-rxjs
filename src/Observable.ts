@@ -486,10 +486,16 @@ export default class Observable<T> {
                       currentSubscription!.unsubscribe()
                       resolve()
                     },
+                    error(e) {
+                      subscriber.error(e)
+                    },
                   })
                 })
             )
             .reduce((a, b) => a.then(b), Promise.resolve())
+        },
+        error(e) {
+          subscriber.error(e)
         },
       })
 
@@ -503,7 +509,7 @@ export default class Observable<T> {
   public debounceTime(this: Observable<T>, millis: number) {
     return new Observable<T>((subscriber) => {
       let currentTimeoutId: null | number
-      this.subscribe({
+      const subscription = this.subscribe({
         next(x) {
           if (currentTimeoutId) {
             clearTimeout(currentTimeoutId)
@@ -513,8 +519,58 @@ export default class Observable<T> {
             subscriber.next(x)
           }, millis)
         },
-        complete() {},
+        complete() {
+          subscriber.complete()
+        },
+        error(e) {
+          subscriber.error(e)
+        },
       })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public startWith<V>(this: Observable<T>, value: V) {
+    return new Observable<V | T>((subscriber) => {
+      subscriber.next(value)
+      const subscription = this.subscribe({
+        next(x) {
+          subscriber.next(x)
+        },
+        complete() {
+          subscriber.complete()
+        },
+        error(e) {
+          subscriber.error(e)
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  public scan<V>(this: Observable<T>, reducer: (a: V, b: T) => V, init: V) {
+    return new Observable((subscriber) => {
+      const subscription = this.subscribe({
+        next(x) {
+          subscriber.next(reducer(init, x))
+        },
+        complete() {
+          subscriber.complete()
+        },
+        error(e) {
+          subscriber.error(e)
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
     })
   }
 }

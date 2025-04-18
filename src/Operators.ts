@@ -460,10 +460,16 @@ export const concatWith = <T, V>(
                     currentSubscription!.unsubscribe()
                     resolve()
                   },
+                  error(e) {
+                    subscriber.error(e)
+                  },
                 })
               })
           )
           .reduce((a, b) => a.then(b), Promise.resolve())
+      },
+      error(e) {
+        subscriber.error(e)
       },
     })
 
@@ -477,7 +483,7 @@ export const concatWith = <T, V>(
 export const debounceTime = <T>(source: Observable<T>, millis: number) => {
   return new Observable<T>((subscriber) => {
     let currentTimeoutId: null | number
-    source.subscribe({
+    const subscription = source.subscribe({
       next(x) {
         if (currentTimeoutId) {
           clearTimeout(currentTimeoutId)
@@ -487,7 +493,61 @@ export const debounceTime = <T>(source: Observable<T>, millis: number) => {
           subscriber.next(x)
         }, millis)
       },
-      complete() {},
+      complete() {
+        subscriber.complete()
+      },
+      error(e) {
+        subscriber.error(e)
+      },
     })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const startWith = <T, V>(source: Observable<T>, value: V) => {
+  return new Observable<V | T>((subscriber) => {
+    subscriber.next(value)
+    const subscription = source.subscribe({
+      next(x) {
+        subscriber.next(x)
+      },
+      complete() {
+        subscriber.complete()
+      },
+      error(e) {
+        subscriber.error(e)
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  })
+}
+
+export const scan = <T, V>(
+  source: Observable<T>,
+  reducer: (a: V, b: T) => V,
+  init: V
+) => {
+  return new Observable<V>((subscriber) => {
+    const subscription = source.subscribe({
+      next(x) {
+        subscriber.next(reducer(init, x))
+      },
+      complete() {
+        subscriber.complete()
+      },
+      error(e) {
+        subscriber.error(e)
+      },
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   })
 }
