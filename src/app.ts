@@ -1,4 +1,15 @@
 import Observable from "./Observable.js"
+import { auditTime } from "./operators/auditTime.js"
+import { catchError } from "./operators/catchError.js"
+import { distinctUntilChanged } from "./operators/distinctUntilChanged.js"
+import { doAction } from "./operators/doAction.js"
+import { map } from "./operators/map.js"
+import { mergeAll } from "./operators/mergeAll.js"
+import { of } from "./operators/of.js"
+import { retry } from "./operators/retry.js"
+import { switchAll } from "./operators/switchAll.js"
+import { take } from "./operators/take.js"
+import { takeUntil } from "./operators/takeUntil.js"
 import { fromEvent, fromFetch } from "./Wrappers.js"
 
 const div = document.body.querySelector("div")!
@@ -26,28 +37,31 @@ const createElement = (tagName: string, textContent: string) => {
   return element
 }
 
-const mouseDrags = fromEvent<MouseEvent, HTMLElement>(div, "mousedown")
-  .take(2)
-  .map(() =>
-    fromEvent<MouseEvent, HTMLElement>(document.body, "mousemove").takeUntil(
-      fromEvent<MouseEvent, HTMLElement>(document.body, "mouseup")
+const mouseDrags = fromEvent(div, "mousedown").pipe<MouseEvent>(
+  take(2),
+  map(() =>
+    fromEvent(document.body, "mousemove").pipe(
+      takeUntil(fromEvent(document.body, "mouseup"))
     )
-  )
-  .mergeAll()
+  ),
+  mergeAll
+)
 
-const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
-  .auditTime(300)
-  .map<string>((x) => x.target.value.trim())
-  .distinctUntilChanged()
-  .map<Observable<string[][] | number>>((x) =>
+const keydowns = fromEvent(input, "keydown").pipe<string[][] | number>(
+  auditTime(300),
+  map<any, string>((x) => x.target.value.trim()),
+  distinctUntilChanged(),
+  map<string, Observable<string[][] | number>>((x) =>
     x.length
-      ? fromFetch<string[][]>(getRequestURL(x))
-          .retry(3)
-          .catchError(() => Observable.Empty)
-      : Observable.of([-1])
-  )
-  .switchAll()
-  .takeUntil(mouseDrags)
+      ? fromFetch(getRequestURL(x)).pipe(
+          retry(3),
+          catchError(() => Observable.Empty)
+        )
+      : of([-1])
+  ),
+  switchAll,
+  takeUntil(mouseDrags)
+)
 
 keydowns.subscribe({
   next(x) {
