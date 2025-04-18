@@ -506,12 +506,12 @@ export default class Observable<T> {
                     },
                     complete() {
                       if (observables.length == i + 1) subscriber.complete()
-                      currentSubscription!.unsubscribe()
+                      currentSubscription?.unsubscribe()
                       resolve()
                     },
                     error(e) {
                       subscriber.error(e)
-                      currentSubscription!.unsubscribe()
+                      currentSubscription?.unsubscribe()
                       resolve()
                     },
                   })
@@ -657,14 +657,14 @@ export default class Observable<T> {
               complete() {
                 successfull = true
                 subscriber.complete()
-                currentSubscription!.unsubscribe()
+                currentSubscription?.unsubscribe()
                 resolve()
               },
               error(e) {
                 if (i == times) {
                   subscriber.error(e)
                 }
-                currentSubscription!.unsubscribe()
+                currentSubscription?.unsubscribe()
                 resolve()
               },
             })

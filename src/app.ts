@@ -41,7 +41,9 @@ const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
   .distinctUntilChanged()
   .map<Observable<string[][] | number>>((x) =>
     x.length
-      ? fromFetch<string[][]>(getRequestURL(x)).retry(3)
+      ? fromFetch<string[][]>(getRequestURL(x))
+          .retry(3)
+          .catchError(() => Observable.Empty)
       : Observable.of([-1])
   )
   .switchAll()
