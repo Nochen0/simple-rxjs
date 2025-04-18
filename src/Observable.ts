@@ -79,7 +79,11 @@ export default class Observable<T> {
     return new Observable<V>((subscriber) => {
       const subscription = this.subscribe({
         next(y) {
-          subscriber.next(f(y))
+          try {
+            subscriber.next(f(y))
+          } catch (e) {
+            subscriber.error(e)
+          }
         },
         complete() {
           subscriber.complete()
@@ -87,6 +91,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -150,6 +155,7 @@ export default class Observable<T> {
             },
             error(e) {
               subscriber.error(e)
+              innerSubscription.unsubscribe()
             },
           })
           innerSubscriptions.push(innerSubscription)
@@ -164,6 +170,8 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
+          innerSubscriptions.forEach((x) => x.unsubscribe())
         },
       })
 
@@ -196,6 +204,7 @@ export default class Observable<T> {
             },
             error(e) {
               subscriber.error(e)
+              innerSubscription.unsubscribe()
             },
           })
           innerSubscriptions.push(innerSubscription)
@@ -210,6 +219,8 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
+          innerSubscriptions.forEach((x) => x.unsubscribe())
         },
       })
 
@@ -241,6 +252,7 @@ export default class Observable<T> {
             },
             error(e) {
               subscriber.error(e)
+              currentSubscription?.unsubscribe()
             },
           })
         },
@@ -255,6 +267,8 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
+          currentSubscription?.unsubscribe()
         },
       })
 
@@ -285,6 +299,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -297,7 +312,7 @@ export default class Observable<T> {
   public takeUntil(this: Observable<T>, notifier: Observable<unknown>) {
     return new Observable<T>((subscriber) => {
       const notifierSubscription = notifier.subscribe({
-        next(x) {
+        next() {
           subscriber.complete()
           limitedSubscription.unsubscribe()
           notifierSubscription.unsubscribe()
@@ -305,6 +320,8 @@ export default class Observable<T> {
         complete() {},
         error(e) {
           subscriber.error(e)
+          notifierSubscription.unsubscribe()
+          limitedSubscription.unsubscribe()
         },
       })
 
@@ -319,6 +336,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          limitedSubscription.unsubscribe()
         },
       })
 
@@ -346,6 +364,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -377,6 +396,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -400,6 +420,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -428,6 +449,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -456,6 +478,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -465,7 +488,7 @@ export default class Observable<T> {
     })
   }
 
-  public concatWith<V>(this: Observable<T>, observables: Observable<V>[]) {
+  public concatWith<V>(this: Observable<T>, ...observables: Observable<V>[]) {
     return new Observable<T | V>((subscriber) => {
       let currentSubscription: undefined | Subscription
       const sourceSubscription = this.subscribe({
@@ -488,6 +511,8 @@ export default class Observable<T> {
                     },
                     error(e) {
                       subscriber.error(e)
+                      currentSubscription!.unsubscribe()
+                      resolve()
                     },
                   })
                 })
@@ -496,6 +521,7 @@ export default class Observable<T> {
         },
         error(e) {
           subscriber.error(e)
+          sourceSubscription.unsubscribe()
         },
       })
 
@@ -521,9 +547,11 @@ export default class Observable<T> {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -542,9 +570,11 @@ export default class Observable<T> {
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -556,15 +586,24 @@ export default class Observable<T> {
 
   public scan<V>(this: Observable<T>, reducer: (a: V, b: T) => V, init: V) {
     return new Observable((subscriber) => {
+      let accumulation = init
       const subscription = this.subscribe({
         next(x) {
-          subscriber.next(reducer(init, x))
+          try {
+            accumulation = reducer(accumulation, x)
+            subscriber.next(accumulation)
+          } catch (e) {
+            subscriber.error(e)
+            subscription.unsubscribe()
+          }
         },
         complete() {
           subscriber.complete()
+          subscription.unsubscribe()
         },
         error(e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         },
       })
 
@@ -572,5 +611,34 @@ export default class Observable<T> {
         subscription.unsubscribe()
       }
     })
+  }
+
+  public catchError<V>(
+    this: Observable<T>,
+    selector: (e: unknown) => Observable<V>
+  ) {
+    let err: unknown = null
+    const caughtSource = new Observable<T>((subscriber) => {
+      const subscription = this.subscribe({
+        next(x) {
+          subscriber.next(x)
+        },
+        complete() {
+          subscriber.complete()
+          subscription.unsubscribe()
+        },
+        error(e) {
+          err = e
+          subscriber.complete()
+          subscription.unsubscribe()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    })
+
+    return caughtSource.concatWith(selector(err))
   }
 }

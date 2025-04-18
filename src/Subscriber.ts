@@ -21,11 +21,9 @@ export default class Subscriber<T> {
     }
   }
 
-  public error(e: unknown, force?: boolean, end?: boolean) {
-    if (this.callbacks.error && (!this.completed || force)) {
+  public error(e: unknown) {
+    if (this.callbacks.error && !this.completed) {
       this.callbacks.error(e)
-    }
-    if (end) {
       this.completed = true
     }
   }

@@ -1,5 +1,4 @@
 import Observable from "./Observable.js"
-import { of } from "./Operators.js"
 import { fromEvent, fromFetch } from "./Wrappers.js"
 
 const div = document.body.querySelector("div")!
@@ -41,7 +40,7 @@ const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
   .map<string>((x) => x.target.value.trim())
   .distinctUntilChanged()
   .map<Observable<string[][] | number>>((x) =>
-    x.length ? fromFetch<string[][]>(getRequestURL(x)) : of([-1])
+    x.length ? fromFetch<string[][]>(getRequestURL(x)) : Observable.of([-1])
   )
   .switchAll()
   .takeUntil(mouseDrags)

@@ -39,7 +39,9 @@ export const fromFetch = <T>(
         subscriber.next(x)
         subscriber.complete()
       })
-      .catch((e) => subscriber.error(e))
+      .catch((e) => {
+        subscriber.error(e)
+      })
 
     return () => {
       controller.abort()
