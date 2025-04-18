@@ -40,7 +40,9 @@ const keydowns = fromEvent<any, HTMLElement>(input, "keydown")
   .map<string>((x) => x.target.value.trim())
   .distinctUntilChanged()
   .map<Observable<string[][] | number>>((x) =>
-    x.length ? fromFetch<string[][]>(getRequestURL(x)) : Observable.of([-1])
+    x.length
+      ? fromFetch<string[][]>(getRequestURL(x)).retry(3)
+      : Observable.of([-1])
   )
   .switchAll()
   .takeUntil(mouseDrags)

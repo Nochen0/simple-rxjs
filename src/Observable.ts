@@ -646,7 +646,7 @@ export default class Observable<T> {
     return new Observable<T>((subscriber) => {
       let currentSubscription: undefined | Subscription
       let successfull = false
-      ;async () => {
+      ;(async () => {
         for (let i = 0; i < times; i++) {
           if (successfull) break
           await new Promise<void>((resolve) => {
@@ -668,7 +668,7 @@ export default class Observable<T> {
             })
           })
         }
-      }
+      })()
     })
   }
 }
