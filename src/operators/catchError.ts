@@ -1,5 +1,5 @@
 import Observable from "../Observable.js"
-import { concat } from "./concat.js"
+import { concat } from "../creators/concat.js"
 
 export const catchError = <T, V>(selector: (e: unknown) => Observable<V>) => {
   return (source: Observable<T>) => {

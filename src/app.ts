@@ -1,15 +1,15 @@
 import Observable from "./Observable.js"
-import { auditTime } from "./operators/auditTime.js"
 import { catchError } from "./operators/catchError.js"
 import { distinctUntilChanged } from "./operators/distinctUntilChanged.js"
 import { map } from "./operators/map.js"
 import { mergeAll } from "./operators/mergeAll.js"
-import { of } from "./operators/of.js"
+import { of } from "./creators/of.js"
 import { retry } from "./operators/retry.js"
 import { switchAll } from "./operators/switchAll.js"
 import { take } from "./operators/take.js"
 import { takeUntil } from "./operators/takeUntil.js"
 import { fromEvent, fromFetch } from "./Wrappers.js"
+import { auditTime } from "./operators/auditTime.js"
 
 const div = document.body.querySelector("div")!
 const input = document.body.querySelector("input")!
