@@ -1,3 +1,4 @@
+import { operate } from "../../utils/operate.js"
 import Observable from "../Observable.js"
 
 export const distinct = <T, V>(
@@ -6,21 +7,11 @@ export const distinct = <T, V>(
   return (source: Observable<T>) => {
     let previousValues: V[] = []
     return new Observable<T>((subscriber) => {
-      const subscription = source.subscribe({
-        next(x) {
-          if (previousValues.find((y) => Object.is(y, comparator(x)))) {
-            subscriber.next(x)
-            previousValues.push(comparator(x))
-          }
-        },
-        complete() {
-          subscriber.complete()
-          subscription.unsubscribe()
-        },
-        error(e) {
-          subscriber.error(e)
-          subscription.unsubscribe()
-        },
+      const subscription = operate(source, subscriber, (x) => {
+        if (previousValues.find((y) => Object.is(y, comparator(x)))) {
+          subscriber.next(x)
+          previousValues.push(comparator(x))
+        }
       })
 
       return () => {

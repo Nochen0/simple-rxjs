@@ -1,3 +1,4 @@
+import { operate } from "../../utils/operate.js"
 import Observable from "../Observable.js"
 
 export const auditTime = <T>(millis: number) => {
@@ -6,25 +7,18 @@ export const auditTime = <T>(millis: number) => {
       let previousMillis = 0
       let currentMillis: undefined | number
       let lastEmission: undefined | T
-      const subscription = source.subscribe({
-        next(x) {
-          currentMillis = Date.now()
-          lastEmission = x
-          if (currentMillis - previousMillis > millis) {
-            previousMillis = Date.now()
-            setTimeout(() => {
-              subscriber.next(lastEmission!)
-            }, millis)
-          }
-        },
-        complete() {
-          subscriber.complete()
-          subscription.unsubscribe()
-        },
-        error(e) {
-          subscriber.error(e)
-          subscription.unsubscribe()
-        },
+
+      const subscription = operate(source, subscriber, (x) => {
+        currentMillis = Date.now()
+        lastEmission = x
+
+        if (currentMillis - previousMillis > millis) {
+          previousMillis = Date.now()
+
+          setTimeout(() => {
+            subscriber.next(lastEmission!)
+          }, millis)
+        }
       })
 
       return () => {

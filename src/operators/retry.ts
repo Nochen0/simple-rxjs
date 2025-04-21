@@ -1,3 +1,4 @@
+import { operate } from "../../utils/operate.js"
 import Observable from "../Observable.js"
 import Subscription from "../Subscription.js"
 
@@ -10,24 +11,22 @@ export const retry = <T>(times: number) => {
         for (let i = 0; i < times + 1; i++) {
           if (successfull) break
           await new Promise<void>((resolve) => {
-            currentSubscription = source.subscribe({
-              next(x) {
-                subscriber.next(x)
-              },
-              complete() {
+            currentSubscription = operate(
+              source,
+              subscriber,
+              undefined,
+              () => {
                 successfull = true
                 subscriber.complete()
-                currentSubscription?.unsubscribe()
                 resolve()
               },
-              error(e) {
+              (e) => {
                 if (i == times) {
                   subscriber.error(e)
                 }
-                currentSubscription?.unsubscribe()
                 resolve()
-              },
-            })
+              }
+            )
           })
         }
       })()

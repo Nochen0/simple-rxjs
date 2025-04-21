@@ -1,3 +1,4 @@
+import { operate } from "../../utils/operate"
 import Observable from "../Observable"
 import Subscription from "../Subscription"
 
@@ -7,21 +8,27 @@ export const merge = (...observables: Observable<any>[]) => {
     const subscriptions: Subscription[] = []
     observables.forEach((observable) => {
       subscriptions.push(
-        observable.subscribe({
-          next(x) {
-            subscriber.next(x)
-          },
-          complete() {
+        operate(
+          observable,
+          subscriber,
+          undefined,
+          () => {
             if (++completedCount == observables.length) {
               subscriber.complete()
             }
           },
-          error(e) {
+          (e) => {
             subscriber.error(e)
-            subscriptions.forEach((subscription) => subscription.unsubscribe())
-          },
-        })
+            subscriptions
+              .slice(0, subscriptions.length - 1)
+              .forEach((subscription) => subscription.unsubscribe())
+          }
+        )
       )
     })
+
+    return () => {
+      subscriptions.forEach((subscription) => subscription.unsubscribe())
+    }
   })
 }

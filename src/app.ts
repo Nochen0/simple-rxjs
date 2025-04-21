@@ -56,7 +56,7 @@ const keydowns = fromEvent(input, "keydown").pipe<string[][] | number>(
           retry(3),
           catchError(() => Observable.Empty)
         )
-      : of([-1])
+      : of(-1)
   ),
   switchAll,
   takeUntil(mouseDrags)

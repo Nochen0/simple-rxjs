@@ -1,3 +1,4 @@
+import { operate } from "../../utils/operate.js"
 import Observable from "../Observable.js"
 import Subscription from "../Subscription.js"
 
@@ -13,19 +14,20 @@ export const concat = <T>(...observables: Observable<any>[]) => {
               resolve()
               return
             }
-            currentSubscription = x.subscribe({
-              next(y) {
-                subscriber.next(y)
-              },
-              complete() {
+            currentSubscription = operate(
+              x,
+              subscriber,
+              undefined,
+              () => {
                 if (observables.length == i + 1) subscriber.complete()
-                currentSubscription!.unsubscribe()
                 resolve()
               },
-              error(e) {
+              (e) => {
+                done = true
                 subscriber.error(e)
-              },
-            })
+                resolve()
+              }
+            )
           })
       )
       .reduce((a, b) => a.then(b), Promise.resolve())
