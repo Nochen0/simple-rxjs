@@ -1,27 +1,25 @@
 import { operate } from "../../utils/operate.js"
 import Observable from "../Observable.js"
-import { concat } from "../creators/concat.js"
+import Subscription from "../Subscription.js"
 
 export const catchError = <T, V>(selector: (e: unknown) => Observable<V>) => {
   return (source: Observable<T>) => {
-    let err: unknown = null
-    const caughtSource = new Observable<T>((subscriber) => {
+    let selectorSubscription: undefined | Subscription
+    return new Observable<T | V>((subscriber) => {
       const subscription = operate(
         source,
         subscriber,
         undefined,
         undefined,
         (e) => {
-          err = e
-          subscriber.complete()
+          selectorSubscription = operate(selector(e), subscriber)
         }
       )
 
       return () => {
         subscription.unsubscribe()
+        selectorSubscription?.unsubscribe()
       }
     })
-
-    return concat(caughtSource, selector(err))
   }
 }

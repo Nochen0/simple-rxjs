@@ -15,16 +15,20 @@ export default class Observable<T> {
     subscriber.complete()
   })
 
+  public static EmptyError = new Observable<never>((subscriber) => {
+    subscriber.error(null)
+  })
+
   subscribe(callbacks: Callbacks<T>): Subscription
   subscribe(
     next: (x: T) => void,
     complete?: () => void,
-    error?: () => void
+    error?: (e: unknown) => void
   ): Subscription
   public subscribe(
     callbacksOrNext: Callbacks<T> | ((x: T) => void),
     complete?: () => void,
-    error?: () => void
+    error?: (e: unknown) => void
   ): Subscription {
     let cbs: Callbacks<T> = {} as any
     if (callbacksOrNext instanceof Function) {

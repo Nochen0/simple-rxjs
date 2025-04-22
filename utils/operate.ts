@@ -1,5 +1,6 @@
 import Observable from "../src/Observable"
 import Subscriber from "../src/Subscriber"
+import Subscription from "../src/Subscription"
 
 export function operate<T, V = T>(
   source: Observable<T>,
@@ -8,7 +9,8 @@ export function operate<T, V = T>(
   complete?: () => void,
   error?: (e: unknown) => void
 ) {
-  const subscription = source.subscribe({
+  let subscription: undefined | Subscription
+  subscription = source.subscribe({
     next: next
       ? next
       : (x) => {
@@ -17,20 +19,20 @@ export function operate<T, V = T>(
     complete: complete
       ? () => {
           complete()
-          subscription.unsubscribe()
+          subscription?.unsubscribe()
         }
       : () => {
           subscriber.complete()
-          subscription.unsubscribe()
+          subscription?.unsubscribe()
         },
     error: error
       ? (e) => {
           error(e)
-          subscription.unsubscribe()
+          subscription?.unsubscribe()
         }
       : (e) => {
           subscriber.error(e)
-          subscription.unsubscribe()
+          subscription?.unsubscribe()
         },
   })
 
