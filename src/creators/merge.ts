@@ -19,9 +19,7 @@ export const merge = (...observables: Observable<any>[]) => {
           },
           (e) => {
             subscriber.error(e)
-            subscriptions
-              .slice(0, subscriptions.length - 1)
-              .forEach((subscription) => subscription.unsubscribe())
+            subscriptions.forEach((subscription) => subscription.unsubscribe())
           }
         )
       )

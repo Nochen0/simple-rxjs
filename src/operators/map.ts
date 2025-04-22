@@ -9,6 +9,7 @@ export const map = <T, V>(f: (x: T) => V) => {
           subscriber.next(f(y))
         } catch (e) {
           subscriber.error(e)
+          subscription.unsubscribe()
         }
       })
 

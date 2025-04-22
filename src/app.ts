@@ -43,7 +43,7 @@ const mouseDrags = fromEvent(div, "mousedown").pipe<MouseEvent>(
       takeUntil(fromEvent(document.body, "mouseup"))
     )
   ),
-  mergeAll
+  mergeAll()
 )
 
 const keydowns = fromEvent(input, "keydown").pipe<string[][] | number>(
