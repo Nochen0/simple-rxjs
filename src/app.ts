@@ -58,7 +58,7 @@ const keydowns = fromEvent(input, "keydown").pipe<string[][] | number>(
         )
       : of(-1)
   ),
-  switchAll,
+  switchAll(),
   takeUntil(mouseDrags)
 )
 

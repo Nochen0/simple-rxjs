@@ -1,6 +1,6 @@
-import { operate } from "../../utils/operate"
-import Observable from "../Observable"
-import Subscription from "../Subscription"
+import { operate } from "../../utils/operate.js"
+import Observable from "../Observable.js"
+import Subscription from "../Subscription.js"
 
 export const merge = (...observables: Observable<any>[]) => {
   return new Observable((subscriber) => {
