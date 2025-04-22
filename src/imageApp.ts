@@ -46,10 +46,9 @@ const previousClicks = fromEvent<MouseEvent, HTMLElement>(
   "click"
 ).pipe<number>(map(() => -1))
 
-const selections = fromEvent<InputEvent, HTMLElement>(
-  select,
-  "change"
-).pipe<string>(
+const selections = fromEvent<InputEvent, HTMLElement>(select, "change").pipe<
+  string | number
+>(
   map((x) => x.target.value),
   startWith(select.value),
   map((x) => fromFetch(`/${x}.json`)),
