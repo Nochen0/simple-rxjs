@@ -8,7 +8,6 @@ import { retry } from "./operators/retry.js"
 import { scan } from "./operators/scan.js"
 import { startWith } from "./operators/startWith.js"
 import { switchAll } from "./operators/switchAll.js"
-import { take } from "./operators/take.js"
 import { fromEvent, fromFetch } from "./Wrappers.js"
 
 const previous = document.getElementById("previous")!
